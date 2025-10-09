@@ -93,6 +93,15 @@ export default function WaterTracker() {
     return parseInt(localStorage.getItem('lastWaterTime')) || Date.now();
   });
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
+  const [quietTimeStart, setQuietTimeStart] = useState(() => {
+    return parseInt(localStorage.getItem('quietTimeStart')) || 22; // 10 PM
+  });
+  const [quietTimeEnd, setQuietTimeEnd] = useState(() => {
+    return parseInt(localStorage.getItem('quietTimeEnd')) || 7; // 7 AM
+  });
+  const [lastNotificationTime, setLastNotificationTime] = useState(() => {
+    return parseInt(localStorage.getItem('lastNotificationTime')) || 0;
+  });
   
   // Calculator states
   const [weight, setWeight] = useState('');
@@ -132,15 +141,23 @@ export default function WaterTracker() {
   useEffect(() => {
     if (!notificationsEnabled || !dailyGoal) return;
     if (Notification.permission !== 'granted') return;
+    if (currentIntake >= dailyGoal) return; // Stop notifications when goal is reached
 
     const checkAndNotify = () => {
       const now = Date.now();
-      const timeSinceLastWater = now - lastWaterTime;
+      const timeSinceLastNotification = now - lastNotificationTime;
       const intervalMs = reminderInterval * 60 * 1000;
 
-      // Only notify if goal not reached and interval has passed
-      if (currentIntake < dailyGoal && timeSinceLastWater >= intervalMs) {
+      // Check if we're in quiet time
+      const currentHour = new Date().getHours();
+      const isQuietTime = quietTimeStart > quietTimeEnd 
+        ? (currentHour >= quietTimeStart || currentHour < quietTimeEnd) // e.g., 22:00 to 07:00
+        : (currentHour >= quietTimeStart && currentHour < quietTimeEnd); // e.g., 01:00 to 06:00
+
+      // Only notify if goal not reached, interval has passed, and not in quiet time
+      if (currentIntake < dailyGoal && timeSinceLastNotification >= intervalMs && !isQuietTime) {
         sendNotification();
+        setLastNotificationTime(now);
       }
     };
 
@@ -149,16 +166,14 @@ export default function WaterTracker() {
     const interval = setInterval(checkAndNotify, 60000);
 
     return () => clearInterval(interval);
-  }, [notificationsEnabled, lastWaterTime, currentIntake, dailyGoal, reminderInterval]);
+  }, [notificationsEnabled, lastNotificationTime, currentIntake, dailyGoal, reminderInterval, quietTimeStart, quietTimeEnd]);
 
-  // Update lastWaterTime when water is added
-  useEffect(() => {
-    if (currentIntake > 0) {
-      const newTime = Date.now();
-      setLastWaterTime(newTime);
-      localStorage.setItem('lastWaterTime', newTime.toString());
-    }
-  }, [currentIntake]);
+  // Update lastWaterTime when water is added (only on manual add, not on state changes)
+  const updateLastWaterTime = () => {
+    const newTime = Date.now();
+    setLastWaterTime(newTime);
+    localStorage.setItem('lastWaterTime', newTime.toString());
+  };
 
   // Persist notification settings
   useEffect(() => {
@@ -168,6 +183,18 @@ export default function WaterTracker() {
   useEffect(() => {
     localStorage.setItem('reminderInterval', reminderInterval.toString());
   }, [reminderInterval]);
+
+  useEffect(() => {
+    localStorage.setItem('quietTimeStart', quietTimeStart.toString());
+  }, [quietTimeStart]);
+
+  useEffect(() => {
+    localStorage.setItem('quietTimeEnd', quietTimeEnd.toString());
+  }, [quietTimeEnd]);
+
+  useEffect(() => {
+    localStorage.setItem('lastNotificationTime', lastNotificationTime.toString());
+  }, [lastNotificationTime]);
 
   // Check for daily reset and record previous day's data
   useEffect(() => {
@@ -243,19 +270,24 @@ export default function WaterTracker() {
     }
   }, [currentIntake, dailyGoal, lastCompletedDate, showAccomplishment]);
 
-  const sendNotification = () => {
+  const sendNotification = (isTest = false) => {
     if ('Notification' in window && Notification.permission === 'granted') {
       const remaining = dailyGoal - currentIntake;
       new Notification('💧 Hydration Reminder', {
-        body: remaining > 0 
-          ? `Time to drink water! You still need ${remaining}ml to reach your goal.`
-          : 'Great job staying hydrated!',
+        body: isTest
+          ? `You'll receive reminders every ${reminderInterval} minutes to stay hydrated.`
+          : remaining > 0 
+            ? `Time to drink water! You still need ${remaining}ml to reach your goal.`
+            : 'Great job staying hydrated!',
         icon: '/droplet.svg',
         badge: '/droplet.svg',
         tag: 'hydration-reminder',
         requireInteraction: false,
         silent: false
       });
+      if (!isTest) {
+        setLastNotificationTime(Date.now());
+      }
     }
   };
 
@@ -265,11 +297,9 @@ export default function WaterTracker() {
       if (permission === 'granted') {
         setNotificationsEnabled(true);
         setShowNotificationPrompt(false);
+        setLastNotificationTime(Date.now());
         // Send a test notification
-        new Notification('🎉 Notifications Enabled!', {
-          body: `You'll receive reminders every ${reminderInterval} minutes to stay hydrated.`,
-          icon: '/droplet.svg'
-        });
+        sendNotification(true);
       } else {
         setShowNotificationPrompt(false);
       }
@@ -278,6 +308,7 @@ export default function WaterTracker() {
 
   const addWater = (amount) => {
     setCurrentIntake(prev => Math.min(prev + amount, dailyGoal + 2000));
+    updateLastWaterTime();
   };
 
   const removeWater = (amount) => {
@@ -854,19 +885,54 @@ export default function WaterTracker() {
                 </div>
 
                 {notificationsEnabled && Notification.permission === 'granted' && (
-                  <div>
-                    <label className="block mb-2 font-semibold">Reminder Interval</label>
-                    <select
-                      value={reminderInterval}
-                      onChange={(e) => setReminderInterval(parseInt(e.target.value))}
-                      className={`w-full ${theme.button} p-3 rounded-xl border ${theme.border} outline-none focus:ring-2 focus:ring-cyan-500`}
-                    >
-                      <option value="30">Every 30 minutes</option>
-                      <option value="60">Every 1 hour</option>
-                      <option value="90">Every 1.5 hours</option>
-                      <option value="120">Every 2 hours</option>
-                    </select>
-                  </div>
+                  <>
+                    <div>
+                      <label className="block mb-2 font-semibold">Reminder Interval</label>
+                      <select
+                        value={reminderInterval}
+                        onChange={(e) => setReminderInterval(parseInt(e.target.value))}
+                        className={`w-full ${theme.button} p-3 rounded-xl border ${theme.border} outline-none focus:ring-2 focus:ring-cyan-500`}
+                      >
+                        <option value="30">Every 30 minutes</option>
+                        <option value="60">Every 1 hour</option>
+                        <option value="90">Every 1.5 hours</option>
+                        <option value="120">Every 2 hours</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block mb-2 font-semibold">Quiet Time (No Notifications)</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className={`block text-sm ${theme.textMuted} mb-1`}>Start</label>
+                          <select
+                            value={quietTimeStart}
+                            onChange={(e) => setQuietTimeStart(parseInt(e.target.value))}
+                            className={`w-full ${theme.button} p-2 rounded-xl border ${theme.border} outline-none focus:ring-2 focus:ring-cyan-500`}
+                          >
+                            {Array.from({ length: 24 }, (_, i) => (
+                              <option key={i} value={i}>{i.toString().padStart(2, '0')}:00</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className={`block text-sm ${theme.textMuted} mb-1`}>End</label>
+                          <select
+                            value={quietTimeEnd}
+                            onChange={(e) => setQuietTimeEnd(parseInt(e.target.value))}
+                            className={`w-full ${theme.button} p-2 rounded-xl border ${theme.border} outline-none focus:ring-2 focus:ring-cyan-500`}
+                          >
+                            {Array.from({ length: 24 }, (_, i) => (
+                              <option key={i} value={i}>{i.toString().padStart(2, '0')}:00</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <p className={`${theme.textMuted} text-xs mt-2`}>
+                        🌙 Currently: {quietTimeStart.toString().padStart(2, '0')}:00 - {quietTimeEnd.toString().padStart(2, '0')}:00
+                      </p>
+                    </div>
+                  </>
                 )}
 
                 {!notificationsEnabled && Notification.permission === 'denied' && (
