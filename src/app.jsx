@@ -201,9 +201,13 @@ export default function WaterTracker() {
     const today = new Date().toDateString();
     
     if (lastResetDate && lastResetDate !== today) {
-      // Save yesterday's data to history
+      // Save yesterday's data to history using local date formatting
       const yesterday = new Date(lastResetDate);
-      const dateKey = yesterday.toISOString().split('T')[0];
+      // Use local date string format (YYYY-MM-DD) to avoid UTC timezone issues
+      const year = yesterday.getFullYear();
+      const month = String(yesterday.getMonth() + 1).padStart(2, '0');
+      const day = String(yesterday.getDate()).padStart(2, '0');
+      const dateKey = `${year}-${month}-${day}`;
       
       setDailyHistory(prev => ({
         ...prev,
@@ -360,7 +364,11 @@ export default function WaterTracker() {
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      const dateKey = date.toISOString().split('T')[0];
+      // Use local date string format (YYYY-MM-DD) to avoid UTC timezone issues
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateKey = `${year}-${month}-${day}`;
       
       if (dailyHistory[dateKey]) {
         stats.push(dailyHistory[dateKey]);
