@@ -431,7 +431,7 @@ export default function WaterTracker() {
               <Droplet className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Hydration Tracker</h1>
+              <h1 className="text-3xl font-bold">Hydro</h1>
               <p className={theme.textMuted}>Stay healthy, stay hydrated</p>
             </div>
           </div>
