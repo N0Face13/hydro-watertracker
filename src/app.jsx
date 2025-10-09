@@ -2,27 +2,78 @@ import React, { useState, useEffect } from 'react';
 import { Droplet, Plus, Minus, Trophy, Calendar, Zap, Calculator, X, Check } from 'lucide-react';
 
 export default function WaterTracker() {
-  // Initialize from memory storage
+  // Initialize from localStorage for persistence across sessions
   const [currentIntake, setCurrentIntake] = useState(() => {
-    const stored = window.hydrationData?.currentIntake;
-    return stored || 0;
+    const stored = localStorage.getItem('hydrationData');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        return data.currentIntake || 0;
+      } catch (e) {
+        return 0;
+      }
+    }
+    return 0;
   });
   const [dailyGoal, setDailyGoal] = useState(() => {
-    const stored = window.hydrationData?.dailyGoal;
-    return stored || null;
+    const stored = localStorage.getItem('hydrationData');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        return data.dailyGoal || null;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
   });
   const [streak, setStreak] = useState(() => {
-    const stored = window.hydrationData?.streak;
-    return stored || 0;
+    const stored = localStorage.getItem('hydrationData');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        return data.streak || 0;
+      } catch (e) {
+        return 0;
+      }
+    }
+    return 0;
   });
   const [lastCompletedDate, setLastCompletedDate] = useState(() => {
-    return window.hydrationData?.lastCompletedDate || null;
+    const stored = localStorage.getItem('hydrationData');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        return data.lastCompletedDate || null;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
   });
   const [lastResetDate, setLastResetDate] = useState(() => {
-    return window.hydrationData?.lastResetDate || null;
+    const stored = localStorage.getItem('hydrationData');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        return data.lastResetDate || null;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
   });
   const [dailyHistory, setDailyHistory] = useState(() => {
-    return window.hydrationData?.dailyHistory || {};
+    const stored = localStorage.getItem('hydrationData');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        return data.dailyHistory || {};
+      } catch (e) {
+        return {};
+      }
+    }
+    return {};
   });
   const [showCalculator, setShowCalculator] = useState(false);
   const [showAccomplishment, setShowAccomplishment] = useState(false);
@@ -66,23 +117,7 @@ export default function WaterTracker() {
     window.hydrationData = data;
   }, [currentIntake, dailyGoal, streak, lastCompletedDate, lastResetDate, dailyHistory]);
 
-  // Initialize from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem('hydrationData');
-    if (stored) {
-      try {
-        const data = JSON.parse(stored);
-        if (data.currentIntake !== undefined) setCurrentIntake(data.currentIntake);
-        if (data.dailyGoal !== undefined) setDailyGoal(data.dailyGoal);
-        if (data.streak !== undefined) setStreak(data.streak);
-        if (data.lastCompletedDate) setLastCompletedDate(data.lastCompletedDate);
-        if (data.lastResetDate) setLastResetDate(data.lastResetDate);
-        if (data.dailyHistory) setDailyHistory(data.dailyHistory);
-      } catch (e) {
-        console.error('Failed to parse stored data:', e);
-      }
-    }
-  }, []);
+
 
   // Notification permission and reminder setup
   useEffect(() => {
