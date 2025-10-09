@@ -32,6 +32,6 @@ body {
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
   box-sizing: border-box;
-  background: white;
+  background: #0f172a;
   min-height: 100dvh; /* dynamic viewport height on modern iOS */
 }
