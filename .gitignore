@@ -4,6 +4,7 @@ node_modules/
 # Build output
 dist/
 build/
+.github/
 
 # Environment variables
 .env
