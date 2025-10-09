@@ -526,21 +526,111 @@ export default function WaterTracker() {
               </defs>
             </svg>
             
-            {/* Center content */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className="text-5xl font-bold mb-2">{Math.round(percentage)}%</div>
-              <div className={theme.textMuted}>{currentIntake} / {dailyGoal || '---'}ml</div>
-            </div>
-            
-            {/* Animated wave */}
-            <div className="absolute inset-0 flex items-end justify-center overflow-hidden rounded-full pointer-events-none" style={{ clipPath: 'circle(112px at center)' }}>
+            {/* Animated water with SVG waves - behind text */}
+            <div className="absolute inset-0 overflow-hidden rounded-full pointer-events-none" style={{ clipPath: 'circle(112px at center)', zIndex: 1 }}>
+              {/* Solid water base - fills from bottom */}
               <div 
-                className={`w-[200%] h-full bg-gradient-to-r ${theme.wave} opacity-20 transition-all duration-1000`}
+                className="absolute inset-x-0 w-full transition-all duration-1000 ease-out"
                 style={{
-                  transform: `translateY(${100 - percentage}%)`,
-                  animation: 'wave 3s ease-in-out infinite'
+                  bottom: 0,
+                  height: `${percentage}%`,
+                  background: 'linear-gradient(to top, rgba(6, 182, 212, 0.7), rgba(14, 116, 144, 0.6))',
+                  zIndex: 1
                 }}
               />
+              
+              {/* Wave Layer 1 - Primary wave on top with smooth curves */}
+              <div 
+                className="absolute inset-x-0 w-full"
+                style={{
+                  bottom: 0,
+                  height: `${Math.min(percentage + 10, 100)}%`,
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3E%3Cpath fill='rgba(6,182,212,0.5)' d='M0,50 C240,20 480,80 720,50 C960,20 1200,80 1440,50 L1440,100 L0,100 Z'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'repeat-x',
+                  backgroundSize: '1440px 50px',
+                  backgroundPosition: 'top left',
+                  animation: 'waveSlide1 15s linear infinite',
+                  zIndex: 3,
+                  transition: 'height 1s ease-out',
+                  filter: 'blur(1px)'
+                }}
+              />
+              
+              {/* Wave Layer 2 - Middle wave with white highlight */}
+              <div 
+                className="absolute inset-x-0 w-full"
+                style={{
+                  bottom: 0,
+                  height: `${Math.min(percentage + 7, 100)}%`,
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3E%3Cpath fill='rgba(255,255,255,0.25)' d='M0,60 C288,90 576,30 864,60 C1152,90 1296,30 1440,60 L1440,100 L0,100 Z'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'repeat-x',
+                  backgroundSize: '1440px 50px',
+                  backgroundPosition: 'top left',
+                  animation: 'waveSlide2 10s linear infinite reverse',
+                  zIndex: 2,
+                  transition: 'height 1s ease-out',
+                  filter: 'blur(0.5px)'
+                }}
+              />
+              
+              {/* Wave Layer 3 - Subtle deep wave */}
+              <div 
+                className="absolute inset-x-0 w-full"
+                style={{
+                  bottom: 0,
+                  height: `${Math.min(percentage + 5, 100)}%`,
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3E%3Cpath fill='rgba(14,116,144,0.4)' d='M0,70 C360,40 720,100 1080,70 C1260,55 1350,85 1440,70 L1440,100 L0,100 Z'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'repeat-x',
+                  backgroundSize: '1440px 50px',
+                  backgroundPosition: 'top left',
+                  animation: 'waveSlide3 20s linear infinite',
+                  zIndex: 2,
+                  transition: 'height 1s ease-out',
+                  filter: 'blur(1.5px)'
+                }}
+              />
+              
+              {/* Bubbles container - positioned within water */}
+              {percentage > 5 && (
+                <div 
+                  className="absolute inset-x-0 w-full"
+                  style={{
+                    bottom: 0,
+                    height: `${percentage}%`,
+                    zIndex: 4
+                  }}
+                >
+                  <div className="bubble" style={{ left: '15%', bottom: '5%', animationDelay: '0s' }} />
+                  <div className="bubble" style={{ left: '75%', bottom: '10%', animationDelay: '1.5s' }} />
+                  <div className="bubble" style={{ left: '40%', bottom: '8%', animationDelay: '3s' }} />
+                  <div className="bubble" style={{ left: '85%', bottom: '12%', animationDelay: '0.8s' }} />
+                  <div className="bubble" style={{ left: '25%', bottom: '15%', animationDelay: '2.2s' }} />
+                  <div className="bubble" style={{ left: '60%', bottom: '6%', animationDelay: '1.2s' }} />
+                  <div className="bubble" style={{ left: '50%', bottom: '18%', animationDelay: '2.8s' }} />
+                  <div className="bubble" style={{ left: '10%', bottom: '9%', animationDelay: '4s' }} />
+                </div>
+              )}
+              
+              {/* Shimmer light effect */}
+              {percentage > 0 && (
+                <div 
+                  className="absolute inset-x-0 w-full"
+                  style={{
+                    bottom: 0,
+                    height: `${percentage}%`,
+                    background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent)',
+                    animation: 'shimmerMove 4s ease-in-out infinite',
+                    zIndex: 5,
+                    transition: 'height 1s ease-out'
+                  }}
+                />
+              )}
+            </div>
+            
+            {/* Center content with glow effect - on top of water */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ zIndex: 10 }}>
+              <div className={`text-5xl font-bold mb-2 ${percentage > 0 ? 'glow-text' : ''}`}>{Math.round(percentage)}%</div>
+              <div className={`${theme.textMuted} ${percentage > 0 ? 'glow-text-subtle' : ''}`}>{currentIntake} / {dailyGoal || '---'}ml</div>
             </div>
           </div>
 
@@ -844,9 +934,108 @@ export default function WaterTracker() {
       </div>
 
       <style jsx>{`
-        @keyframes wave {
-          0%, 100% { transform: translateX(0) translateY(${100 - percentage}%); }
-          50% { transform: translateX(-25%) translateY(${100 - percentage}%); }
+        @keyframes waveSlide1 {
+          0% { 
+            background-position-x: 0px;
+          }
+          100% { 
+            background-position-x: 1440px;
+          }
+        }
+        
+        @keyframes waveSlide2 {
+          0% { 
+            background-position-x: 0px;
+          }
+          100% { 
+            background-position-x: -1440px;
+          }
+        }
+        
+        @keyframes waveSlide3 {
+          0% { 
+            background-position-x: 0px;
+          }
+          100% { 
+            background-position-x: 1440px;
+          }
+        }
+        
+        @keyframes bubbleRise {
+          0% {
+            transform: translateY(0) scale(0);
+            opacity: 0;
+          }
+          10% {
+            opacity: 1;
+            transform: translateY(-10px) scale(0.5);
+          }
+          50% {
+            opacity: 0.8;
+            transform: translateY(-80px) scale(0.8);
+          }
+          100% {
+            transform: translateY(-180px) scale(0.4);
+            opacity: 0;
+          }
+        }
+        
+        @keyframes shimmerMove {
+          0% {
+            transform: translateX(-100%);
+          }
+          50% {
+            transform: translateX(0%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
+        }
+        
+        @keyframes glow {
+          0%, 100% {
+            text-shadow: 0 0 5px rgba(6, 182, 212, 0.3);
+          }
+          50% {
+            text-shadow: 0 0 20px rgba(6, 182, 212, 0.6), 0 0 30px rgba(6, 182, 212, 0.3);
+          }
+        }
+        
+        /* Bubble styles */
+        .bubble {
+          position: absolute;
+          width: 6px;
+          height: 6px;
+          background: radial-gradient(circle at 30% 30%, 
+            rgba(255, 255, 255, 0.95) 0%, 
+            rgba(200, 240, 255, 0.7) 40%, 
+            rgba(100, 200, 255, 0.3) 70%,
+            transparent 100%);
+          border-radius: 50%;
+          animation: bubbleRise 5s ease-in-out infinite;
+          box-shadow: 
+            0 0 8px rgba(255, 255, 255, 0.5),
+            inset -2px -2px 4px rgba(255, 255, 255, 0.6),
+            inset 2px 2px 4px rgba(0, 150, 200, 0.3);
+          filter: blur(0.3px);
+        }
+        
+        .bubble:nth-child(1) { width: 8px; height: 8px; animation-duration: 6s; }
+        .bubble:nth-child(2) { width: 5px; height: 5px; animation-duration: 5.5s; }
+        .bubble:nth-child(3) { width: 7px; height: 7px; animation-duration: 7s; }
+        .bubble:nth-child(4) { width: 6px; height: 6px; animation-duration: 5s; }
+        .bubble:nth-child(5) { width: 9px; height: 9px; animation-duration: 8s; }
+        .bubble:nth-child(6) { width: 5px; height: 5px; animation-duration: 6.5s; }
+        .bubble:nth-child(7) { width: 7px; height: 7px; animation-duration: 5.8s; }
+        .bubble:nth-child(8) { width: 6px; height: 6px; animation-duration: 7.2s; }
+        
+        /* Glow effects */
+        .glow-text {
+          animation: glow 3s ease-in-out infinite;
+        }
+        
+        .glow-text-subtle {
+          text-shadow: 0 0 8px rgba(6, 182, 212, 0.2);
         }
       `}</style>
     </div>
